@@ -10,9 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.querySelector(".search");
   const usersCount = document.getElementById("usersCount");
 
-
-function show(el){ el.classList.remove("hidden"); }
-function hide(el){ el.classList.add("hidden"); }
+  function show(el){ el.classList.remove("hidden"); }
+  function hide(el){ el.classList.add("hidden"); }
 
   // ===== State =====
   let selectedUserId = null;
@@ -40,139 +39,147 @@ function hide(el){ el.classList.add("hidden"); }
     });
   });
 
-  // ===== Mock data sources (later swap to fetch) =====
-  async function apiGet(url){
-  const res = await fetch(url);
-  if(!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
-}
+  // ===== MOCK DATA (SUNUM MODU) =====
+  async function getUsers() {
+    return [
+      { user_id: "Kullanıcı1", total_points: 820 },
+      { user_id: "Kullanıcı2", total_points: 450 },
+      { user_id: "Kullanıcı3", total_points: 1200 },
+    ];
+  }
 
-async function getUsers(){
-  
-  return apiGet("/api/users");
-}
-
-async function getUserDetail(userId){
-  const raw = await apiGet(`/api/user/${encodeURIComponent(userId)}`);
-  const s = raw.state || {};
-
-  return {
-    state: {
-      today: {
-        listen_minutes_today: s.listen_minutes_today ?? 0,
-        unique_tracks_today: s.unique_tracks_today ?? 0,
-        playlist_additions_today: s.playlist_additions_today ?? 0,
-        shares_today: s.shares_today ?? 0,
+  async function getUserDetail(userId) {
+    const db = {
+      "Kullanıcı1": {
+        state: {
+          today: { listen_minutes_today: 45, unique_tracks_today: 12, playlist_additions_today: 3, shares_today: 2 },
+          d7: { listen_minutes_7d: 520, unique_tracks_7d: 70, shares_7d: 8 },
+          streak: 4,
+        },
+        challenges: { triggered: ["Günlük Dinleme", "Paylaşım Bonus"], selected: "Günlük Dinleme", suppressed: ["Paylaşım Bonus"] },
+        badges: ["Bronz Dinleyici"],
+        notifications: [
+          { message: "Günlük Dinleme görevini tamamladın", sent_at: "2026-02-16", channel: "BiP" },
+        ],
       },
-      d7: {
-        listen_minutes_7d: s.listen_minutes_7d ?? 0,
-        unique_tracks_7d: s.unique_tracks_7d ?? 0,
-        shares_7d: s.shares_7d ?? 0,
+      "Kullanıcı2": {
+        state: {
+          today: { listen_minutes_today: 20, unique_tracks_today: 6, playlist_additions_today: 1, shares_today: 0 },
+          d7: { listen_minutes_7d: 210, unique_tracks_7d: 30, shares_7d: 1 },
+          streak: 1,
+        },
+        challenges: { triggered: ["Günlük Dinleme"], selected: "Günlük Dinleme", suppressed: [] },
+        badges: ["Yeni Başlayan"],
+        notifications: [
+          { message: "Bugün 20 dk dinledin", sent_at: "2026-02-16", channel: "BiP" },
+        ],
       },
-      streak: s.listen_streak_days ?? s.streak ?? 0,
-    },
-    challenges: {
-      triggered: (raw.awards || []).flatMap(a => a.triggered_challenges || []),
-      selected: (raw.awards || [])[0]?.selected_challenge || "-",
-      suppressed: (raw.awards || []).flatMap(a => a.suppressed_challenges || []),
-    },
-    badges: (raw.badges || []).map(b => b.badge_id || b.badge || String(b)),
-    notifications: (raw.notifs || []).map(n => ({
-      message: n.message,
-      sent_at: (n.sent_at || "").toString().slice(0,10),
-      channel: n.channel || "BiP",
-    })),
-  };
-}
+      "Kullanıcı3": {
+        state: {
+          today: { listen_minutes_today: 80, unique_tracks_today: 25, playlist_additions_today: 5, shares_today: 4 },
+          d7: { listen_minutes_7d: 910, unique_tracks_7d: 140, shares_7d: 18 },
+          streak: 9,
+        },
+        challenges: { triggered: ["Günlük Dinleme", "Paylaşım Bonus", "Haftalık Seri"], selected: "Haftalık Seri", suppressed: [] },
+        badges: ["Gümüş Dinleyici", "Seri Canavarı"],
+        notifications: [
+          { message: "Haftalık Seri rozetini kazandın", sent_at: "2026-02-16", channel: "BiP" },
+          { message: "Paylaşım Bonus ile +50 puan", sent_at: "2026-02-16", channel: "BiP" },
+        ],
+      },
+    };
 
+    return db[userId] || {
+      state: {
+        today: { listen_minutes_today: 0, unique_tracks_today: 0, playlist_additions_today: 0, shares_today: 0 },
+        d7: { listen_minutes_7d: 0, unique_tracks_7d: 0, shares_7d: 0 },
+        streak: 0,
+      },
+      challenges: { triggered: [], selected: "-", suppressed: [] },
+      badges: [],
+      notifications: [],
+    };
+  }
 
-async function getLeaderboard(asOfDate){
-  return apiGet("/api/leaderboard");
-}
+  async function getLeaderboard(asOfDate) {
+    return [
+      { rank: 1, user_id: "Kullanıcı3", total_points: 1200 },
+      { rank: 2, user_id: "Kullanıcı1", total_points: 820 },
+      { rank: 3, user_id: "Kullanıcı2", total_points: 450 },
+    ];
+  }
 
   // ===== Render =====
- function renderUsers(users) {
-  usersTbody.innerHTML = "";
+  function renderUsers(users) {
+    usersTbody.innerHTML = "";
 
-  users.forEach((user) => {
-    const tr = document.createElement("tr");
+    users.forEach((user) => {
+      const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>
-        <button class="row-btn" data-id="${user.user_id}">
-          <span class="user-pill">
-            <span class="user-avatar">
-              ${user.user_id.charAt(0).toUpperCase()}
+      tr.innerHTML = `
+        <td>
+          <button class="row-btn" data-id="${user.user_id}">
+            <span class="user-pill">
+              <span class="user-avatar">
+                ${user.user_id.charAt(0).toUpperCase()}
+              </span>
+              ${user.user_id}
             </span>
-            ${user.user_id}
-          </span>
-        </button>
-      </td>
-      <td><span class="points">${user.total_points}</span></td>
-    `;
+          </button>
+        </td>
+        <td><span class="points">${user.total_points}</span></td>
+      `;
 
-    usersTbody.appendChild(tr);
-  });
+      usersTbody.appendChild(tr);
+    });
 
-
-    // click handler
     document.querySelectorAll(".row-btn").forEach((btn) => {
-     btn.addEventListener("click", async () => {
+      btn.addEventListener("click", async () => {
+        document.querySelectorAll("#usersTbody tr")
+          .forEach(tr => tr.classList.remove("active"));
 
-  document.querySelectorAll("#usersTbody tr")
-    .forEach(tr => tr.classList.remove("active"));
+        btn.closest("tr").classList.add("active");
 
-  btn.closest("tr").classList.add("active");
+        selectedUserId = btn.dataset.id;
 
-  selectedUserId = btn.dataset.id;
+        selectedUserPill.innerHTML =
+          `<span class="dot accent"></span> ${selectedUserId}`;
 
-  selectedUserPill.innerHTML =
-    `<span class="dot accent"></span> ${selectedUserId}`;
+        const panelBody = document.querySelector(".main .panel-body");
+        panelBody.classList.add("loading");
 
-  const panelBody = document.querySelector(".main .panel-body");
-  panelBody.classList.add("loading");
+        show(detailLoading);
 
-  show(detailLoading);
+        const detail = await getUserDetail(selectedUserId);
+        renderUserDetail(detail);
 
-  const detail = await getUserDetail(selectedUserId);
-  renderUserDetail(detail);
-
-  hide(detailLoading);
-  panelBody.classList.remove("loading");
-
-});
+        hide(detailLoading);
+        panelBody.classList.remove("loading");
+      });
     });
   }
 
-  
-
   function renderUserDetail(data) {
     const mainPanel = document.querySelector(".main .panel");
-mainPanel.classList.remove("fade-in");
-void mainPanel.offsetWidth; // reflow: animasyonu yeniden başlatır
-mainPanel.classList.add("fade-in");
+    mainPanel.classList.remove("fade-in");
+    void mainPanel.offsetWidth;
+    mainPanel.classList.add("fade-in");
 
-    // STATS
     document.getElementById("statToday").textContent = `${data.state.today.listen_minutes_today} dk`;
     document.getElementById("stat7d").textContent = `${data.state.d7.listen_minutes_7d} dk`;
     document.getElementById("statStreak").textContent = `${data.state.streak} gün`;
-// STREAK PROGRESS
-const streakProgress = document.getElementById("streakProgress");
-const streakBar = document.getElementById("streakBar");
 
-const pct = Math.min(100, (data.state.streak || 0) * 20);
+    const streakProgress = document.getElementById("streakProgress");
+    const streakBar = document.getElementById("streakBar");
+    const pct = Math.min(100, (data.state.streak || 0) * 20);
+    streakProgress.classList.remove("hidden");
+    streakBar.style.width = pct + "%";
+    document.getElementById("streakFlame").classList.remove("hidden");
 
-streakProgress.classList.remove("hidden");
-streakBar.style.width = pct + "%";
-document.getElementById("streakFlame").classList.remove("hidden");
-
-
-    // CHALLENGES
     document.getElementById("triggeredBox").textContent = (data.challenges.triggered || []).join(", ") || "-";
     document.getElementById("selectedBox").textContent = data.challenges.selected || "-";
     document.getElementById("suppressedBox").textContent = (data.challenges.suppressed || []).join(", ") || "-";
 
-    // BADGES
     const badgeRow = document.getElementById("badgesRow");
     badgeRow.innerHTML = "";
     (data.badges || []).forEach((b) => {
@@ -183,7 +190,6 @@ document.getElementById("streakFlame").classList.remove("hidden");
     });
     if (!data.badges || data.badges.length === 0) badgeRow.innerHTML = `<span class="badge">-</span>`;
 
-    // NOTIFICATIONS
     const notifList = document.getElementById("notifList");
     notifList.innerHTML = "";
     (data.notifications || []).forEach((n) => {
@@ -208,116 +214,110 @@ document.getElementById("streakFlame").classList.remove("hidden");
         </div>
       `;
     }
-    // animasyonu zorla (her seçimde tekrar oynasın)
-const dc = document.getElementById("detailContent");
-dc.classList.remove("reveal");
-void dc.offsetWidth; // reflow
-dc.classList.add("reveal");
 
+    const dc = document.getElementById("detailContent");
+    dc.classList.remove("reveal");
+    void dc.offsetWidth;
+    dc.classList.add("reveal");
   }
 
- function renderLeaderboard(data) {
-  const lbTbody = document.getElementById("lbTbody");
-  lbTbody.innerHTML = "";
+  function renderLeaderboard(data) {
+    const lbTbody = document.getElementById("lbTbody");
+    lbTbody.innerHTML = "";
 
-  data.forEach(row => {
+    data.forEach(row => {
+      let medal = "";
+      if (row.rank === 1) medal = "🥇";
+      else if (row.rank === 2) medal = "🥈";
+      else if (row.rank === 3) medal = "🥉";
 
-    let medal = "";
-    if (row.rank === 1) medal = "🥇";
-    else if (row.rank === 2) medal = "🥈";
-    else if (row.rank === 3) medal = "🥉";
+      const tr = document.createElement("tr");
+      tr.className = "lb-row";
+      tr.dataset.id = row.user_id;
 
-    const tr = document.createElement("tr");
-    tr.className = "lb-row";
-    tr.dataset.id = row.user_id;
+      tr.innerHTML = `
+        <td>
+          ${row.rank <= 3
+            ? `<span class="medal m${row.rank}">${medal}</span>`
+            : `<span class="rank">${row.rank}</span>`
+          }
+        </td>
+        <td>${row.user_id}</td>
+        <td>${row.total_points}</td>
+      `;
 
-    tr.innerHTML = `
-      <td>
-        ${row.rank <= 3
-          ? `<span class="medal m${row.rank}">${medal}</span>`
-          : `<span class="rank">${row.rank}</span>`
-        }
-      </td>
-      <td>${row.user_id}</td>
-      <td>${row.total_points}</td>
-    `;
-
-    lbTbody.appendChild(tr);
-  });
-
-  bindLeaderboardClicks();
-}
-
-function bindLeaderboardClicks(){
-  document.querySelectorAll(".lb-row").forEach(tr => {
-    tr.addEventListener("click", async () => {
-
-      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-      document.querySelector('[data-tab="overview"]').classList.add("active");
-
-      document.querySelectorAll(".tabpage").forEach(p => p.classList.remove("active"));
-      document.getElementById("tab-overview").classList.add("active");
-
-      selectedUserId = tr.dataset.id;
-
-      document.querySelectorAll("#usersTbody tr")
-        .forEach(tr => tr.classList.remove("active"));
-
-      const targetRowBtn = document.querySelector(
-        `#usersTbody .row-btn[data-id="${selectedUserId}"]`
-      );
-
-      if (targetRowBtn) {
-        targetRowBtn.closest("tr").classList.add("active");
-      }
-
-      selectedUserPill.innerHTML =
-        `<span class="dot accent"></span> ${selectedUserId}`;
-
-      const panelBody = document.querySelector(".main .panel-body");
-      panelBody.classList.add("loading");
-
-      show(detailLoading);
-
-      const detail = await getUserDetail(selectedUserId);
-      renderUserDetail(detail);
-
-      hide(detailLoading);
-      panelBody.classList.remove("loading");
+      lbTbody.appendChild(tr);
     });
-  });
-}
 
+    bindLeaderboardClicks();
+  }
+
+  function bindLeaderboardClicks(){
+    document.querySelectorAll(".lb-row").forEach(tr => {
+      tr.addEventListener("click", async () => {
+
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        document.querySelector('[data-tab="overview"]').classList.add("active");
+
+        document.querySelectorAll(".tabpage").forEach(p => p.classList.remove("active"));
+        document.getElementById("tab-overview").classList.add("active");
+
+        selectedUserId = tr.dataset.id;
+
+        document.querySelectorAll("#usersTbody tr")
+          .forEach(tr => tr.classList.remove("active"));
+
+        const targetRowBtn = document.querySelector(
+          `#usersTbody .row-btn[data-id="${selectedUserId}"]`
+        );
+
+        if (targetRowBtn) {
+          targetRowBtn.closest("tr").classList.add("active");
+        }
+
+        selectedUserPill.innerHTML =
+          `<span class="dot accent"></span> ${selectedUserId}`;
+
+        const panelBody = document.querySelector(".main .panel-body");
+        panelBody.classList.add("loading");
+
+        show(detailLoading);
+
+        const detail = await getUserDetail(selectedUserId);
+        renderUserDetail(detail);
+
+        hide(detailLoading);
+        panelBody.classList.remove("loading");
+      });
+    });
+  }
 
   // ===== Refresh + Date change =====
- async function refreshAll() {
+  async function refreshAll() {
+    show(leaderboardLoading);
 
-  show(leaderboardLoading);
+    const leaderboard = await getLeaderboard(asOf.value);
+    renderLeaderboard(leaderboard);
 
-  const leaderboard = await getLeaderboard(asOf.value);
-  renderLeaderboard(leaderboard);
+    hide(leaderboardLoading);
 
-  hide(leaderboardLoading);
-
-  if (selectedUserId) {
-    show(detailLoading);
-    const detail = await getUserDetail(selectedUserId);
-    renderUserDetail(detail);
-    hide(detailLoading);
+    if (selectedUserId) {
+      show(detailLoading);
+      const detail = await getUserDetail(selectedUserId);
+      renderUserDetail(detail);
+      hide(detailLoading);
+    }
   }
-}
-
 
   refreshBtn.addEventListener("click", refreshAll);
   asOf.addEventListener("change", refreshAll);
 
-  // ===== Clear right panel only =====
+  // ===== Clear =====
   clearBtn.addEventListener("click", () => {
     selectedUserId = null;
     document.getElementById("userSearch").value = "";
     usersCount.textContent = `${allUsers.length} Kullanıcı`;
     renderUsers(allUsers);
-
 
     document.querySelectorAll("#usersTbody tr").forEach((tr) => tr.classList.remove("active"));
 
@@ -326,11 +326,10 @@ function bindLeaderboardClicks(){
     document.getElementById("statToday").textContent = "-";
     document.getElementById("stat7d").textContent = "-";
     document.getElementById("statStreak").textContent = "-";
-  
-document.getElementById("streakProgress").classList.add("hidden");
-document.getElementById("streakBar").style.width = "0%";
-document.getElementById("streakFlame").classList.add("hidden");
 
+    document.getElementById("streakProgress").classList.add("hidden");
+    document.getElementById("streakBar").style.width = "0%";
+    document.getElementById("streakFlame").classList.add("hidden");
 
     document.getElementById("triggeredBox").textContent = "-";
     document.getElementById("selectedBox").textContent = "-";
@@ -350,27 +349,22 @@ document.getElementById("streakFlame").classList.add("hidden");
   });
 
   searchInput.addEventListener("input", (e) => {
-  const value = e.target.value.toLowerCase();
-
-  const filtered = allUsers.filter(user =>
-    user.user_id.toLowerCase().includes(value)
-  );
-
-  renderUsers(filtered);
-  usersCount.textContent = `${filtered.length} Kullanıcı`;
-});
-
+    const value = e.target.value.toLowerCase();
+    const filtered = allUsers.filter(user =>
+      user.user_id.toLowerCase().includes(value)
+    );
+    renderUsers(filtered);
+    usersCount.textContent = `${filtered.length} Kullanıcı`;
+  });
 
   // ===== Init =====
   async function init() {
-  const users = await getUsers();
-  allUsers = users; 
-  usersCount.textContent = `${allUsers.length} Kullanıcı`;
-  renderUsers(users);
+    const users = await getUsers();
+    allUsers = users;
+    usersCount.textContent = `${allUsers.length} Kullanıcı`;
+    renderUsers(users);
+    await refreshAll();
+  }
 
-  await refreshAll();
-}
-
-init();
-
+  init();
 });
