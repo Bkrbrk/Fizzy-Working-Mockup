@@ -1,0 +1,197 @@
+    <!doctype html>
+    <html lang="tr">
+    <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fizy Playlist Party League Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    </head>
+    <body>
+
+        <div id="leaderboardLoading" class="loading hidden">
+    Yükleniyor...
+    </div>
+
+    <div class="topbar">
+        <div class="topbar-inner">
+        <div class="brand">
+    <div class="logo-box">
+        <img src="/static/fizy-logo.png" alt="Fizy Logo">
+    </div>
+    <div class="title">
+        <h1>Fizy Playlist Party League</h1>
+        <div class="sub">Kontrol Paneli</div>
+    </div>
+    </div>
+
+
+        <div class="controls">
+            <div class="control">
+            <label for="asOf">X</label>
+            <input id="asOf" type="date" />
+            </div>
+            <button id="refreshBtn">Yenile</button>
+            <button class="secondary" id="clearBtn">Temizle</button>
+        </div>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <!-- APP LAYOUT: Left sidebar + Right content -->
+        <div class="app">
+        <!-- LEFT: USERS SIDEBAR -->
+        <aside class="panel sidebar" aria-label="Users">
+            <div class="panel-header">
+            <h2>Kullanıcılar</h2>
+            <div class="hint" id="usersCount">0 Kullanıcı</div>
+            </div>
+
+            <div class="panel-body">
+            <input class="search" id="userSearch" placeholder="Kullanıcı Ara" />
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Kullanıcı</th>
+                    <th>Toplam Puan</th>
+                </tr>
+                </thead>
+                <tbody id="usersTbody">
+                <tr>
+                    <td colspan="2" class="empty">Backend bağlanınca burada kullanıcılar listelenecek</td>
+                </tr>
+                </tbody>
+            </table>
+            </div>
+        </aside>
+
+        <!-- RIGHT: MAIN CONTENT -->
+        <main class="panel main" aria-label="Main Content">
+            <div class="panel-header">
+            <h2 id="rightTitle">Genel Bakış</h2>
+            <span class="pill" id="selectedUserPill"><span class="dot"></span> Kullanıcı Seçilmedi</span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+            <button class="tab active" data-tab="overview">Genel Bakış</button>
+            <button class="tab" data-tab="leaderboard">Liderlik Tablosu</button>
+            </div>
+
+            <div class="panel-body">
+                <div id="detailLoading" class="loading hidden">
+    Yükleniyor...
+    </div>
+
+            <!-- OVERVIEW TAB -->
+            <section id="tab-overview" class="tabpage active">
+    <div id="detailContent">
+            <!-- compact stats row -->
+    <div class="stats">
+    <div class="stat">
+        <div class="stat-k">Günlük</div>
+        <div class="stat-v" id="statToday">-</div>
+        <div class="stat-sub">Dakikalar • Parçalar<br>Eklenen Şarkılar • Paylaşılan</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-k">7 Gün</div>
+        <div class="stat-v" id="stat7d">-</div>
+        <div class="stat-sub">Dakikalar • Parçalar • Paylaşılan</div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-k stat-k--streak">
+        <span>Seri</span>
+        <span id="streakFlame" class="flame hidden">🔥</span>
+        </div>
+
+        <div class="stat-v" id="statStreak">-</div>
+        <div class="stat-sub">Seri Günü</div>
+
+        <div id="streakProgress" class="stat-progress hidden">
+        <div id="streakBar" class="stat-bar" style="width:0%"></div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+                <!-- collapsible sections -->
+                <details class="section" open>
+                <summary>Görevler</summary>
+
+                <div class="split-3">
+    <div class="callout good">
+        <div class="label"><span class="dot good"></span> Seçilen</div>
+        <div class="value" id="selectedBox">-</div>
+    </div>
+
+    <div class="callout">
+        <div class="label"><span class="dot warn"></span> Atanan</div>
+        <div class="value" id="triggeredBox">-</div>
+    </div>
+
+    <div class="callout muted">
+        <div class="label"><span class="dot"></span> Diğerleri</div>
+        <div class="value" id="suppressedBox">-</div>
+    </div>
+    </div>
+
+                </details>
+
+                <details class="section">
+                <summary>Başarılar</summary>
+                <div class="badge-row" id="badgesRow">
+                    <span class="badge">-</span>
+                </div>
+                </details>
+
+                <details class="section">
+                <summary>Bildirimler</summary>
+                <div class="list" id="notifList">
+                    <div class="item">
+                    <div>Backend bağlanınca burada bildirimler listelenecek</div>
+                    <div class="meta">
+                        <span class="pill"><span class="dot"></span> BiP</span>
+                        <span>sent_at: -</span>
+                    </div>
+                    </div>
+                </div>
+                </details>
+
+            </section>
+
+            <!-- LEADERBOARD TAB -->
+            <section id="tab-leaderboard" class="tabpage">
+                <div class="panel inner leaderboard-panel">
+                <div class="panel-header">
+                    <h2>Liderlik Tablosu</h2>
+                    <span class="pill"><span class="dot accent"></span> Top 10</span>
+                </div>
+                <div class="panel-body">
+                    <table class="lb-table">
+                    <thead>
+                        <tr>
+                        <th>Sıra</th>
+                        <th>Kullanıcı</th>
+                        <th>Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lbTbody">
+                        <tr>
+                        <td colspan="3" class="empty">Backend bağlanınca burada ilk 10 görünecek</td>
+                        </tr>
+                    </tbody>
+                    </table>
+                </div>
+                </div>
+            </section>
+
+            </div>
+        </main>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+
+    </body>
+    </html>
